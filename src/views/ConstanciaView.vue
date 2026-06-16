@@ -1,48 +1,48 @@
-<script>
-import axios from 'axios'
+<script setup>
+import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 
-export default {
-  data() {
-    return {
-      constancia: null,
-      error: null
+const route = useRoute()
+const constancia = ref(null)
+const error = ref(null)
+
+const cui = route.params.cui
+const controller = new AbortController()
+const timeoutId = setTimeout(() => controller.abort(), 20000)
+
+fetch('/enrollment-certificate/?cui=' + cui, { signal: controller.signal })
+  .then(response => {
+    if (!response.ok) {
+      const err = new Error('http_error')
+      err.status = response.status
+      err.isHttpError = true
+      throw err
     }
-  },
-
-  created() {
-    const cui = this.$route.params.cui
-    const source = axios.CancelToken.source()
-    const timeoutId = setTimeout(() => source.cancel('La solicitud tardó demasiado'), 20000)
-
-    axios.get(
-      '/enrollment-certificate/?cui=' + cui
-    ).then(response => {
-      this.constancia = response.data
-    }).catch(e => {
-      if (axios.isCancel(e)) {
-        this.error = 'La solicitud está demorando demasiado. Intente nuevamente.'
-      } else if (e.response) {
-        this.error = 'Error del servidor (' + e.response.status + '). Verifique el CUI ingresado.'
-      } else if (e.request) {
-        this.error = 'No se pudo conectar con el servidor. Verifique su conexión.'
-      } else {
-        this.error = 'Error al cargar la constancia. Verifique el CUI ingresado.'
-      }
-    }).finally(() => {
-      clearTimeout(timeoutId)
+    return response.json().catch(() => {
+      throw new Error('invalid_json')
     })
-  },
-
-  methods: {
-    formatDate(str) {
-      if (!str) return '—'
-      return new Date(str).toLocaleDateString('es-PE', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      })
+  })
+  .then(data => {
+    if (data && Array.isArray(data.results)) {
+      constancia.value = data
+    } else {
+      error.value = 'Respuesta inesperada del servidor. Intente nuevamente.'
     }
-  }
-}
+  })
+  .catch(e => {
+    if (e.name === 'AbortError') {
+      error.value = 'La solicitud estÃ¡ demorando demasiado. Intente nuevamente.'
+    } else if (e.isHttpError) {
+      error.value = 'Error del servidor (' + e.status + '). Verifique el CUI ingresado.'
+    } else if (e.message === 'invalid_json') {
+      error.value = 'Error al cargar la constancia. Verifique el CUI ingresado.'
+    } else {
+      error.value = 'No se pudo conectar con el servidor. Verifique su conexiÃ³n.'
+    }
+  })
+  .finally(() => {
+    clearTimeout(timeoutId)
+  })
 </script>
 
 <template>
@@ -57,11 +57,11 @@ export default {
         <div class="header-top">
           <div class="seal">UNSA</div>
           <div>
-            <h1>UNIVERSIDAD NACIONAL DE SAN AGUSTÍN</h1>
-            <p class="subtitle">Dirección de Sistemas de Información Académica</p>
+            <h1>UNIVERSIDAD NACIONAL DE SAN AGUSTÃN</h1>
+            <p class="subtitle">DirecciÃ³n de Sistemas de InformaciÃ³n AcadÃ©mica</p>
           </div>
         </div>
-        <h2 class="cert-title">CONSTANCIA DE MATRÍCULA</h2>
+        <h2 class="cert-title">CONSTANCIA DE MATRÃCULA</h2>
       </div>
 
       <div v-if="constancia.results.length">
@@ -86,8 +86,8 @@ export default {
 
         <div class="table">
           <div class="th">
-            <span>N°</span><span>Código</span><span>Curso</span>
-            <span>Créd</span><span>Grupo</span><span>Lab</span><span>Docente</span>
+            <span>NÂ°</span><span>CÃ³digo</span><span>Curso</span>
+            <span>CrÃ©d</span><span>Grupo</span><span>Lab</span><span>Docente</span>
           </div>
           <div v-for="(item, i) in constancia.results" :key="item.id" class="tr">
             <span>{{ i + 1 }}</span>
