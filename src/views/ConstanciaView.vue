@@ -10,7 +10,7 @@ const cui = route.params.cui
 const controller = new AbortController()
 const timeoutId = setTimeout(() => controller.abort(), 20000)
 
-fetch('/enrollment-certificate/?cui=' + cui, { signal: controller.signal })
+fetch('/api/restful/enrollment-certificate/?cui=' + cui, { signal: controller.signal })
   .then(response => {
     if (!response.ok) {
       const err = new Error('http_error')
