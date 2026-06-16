@@ -15,8 +15,7 @@ export default {
     const timeoutId = setTimeout(() => source.cancel('La solicitud tardó demasiado'), 20000)
 
     axios.get(
-      'https://sisacad-enrollments-backend.vercel.app/restful/enrollment-certificate/?cui=' + cui,
-      { cancelToken: source.token }
+      '/enrollment-certificate/?cui=' + cui
     ).then(response => {
       this.constancia = response.data
     }).catch(e => {
